@@ -19,6 +19,9 @@
 #include <set>
 #include <vector>
 
+#include <Eigen/Sparse>
+
+
 #include "../include/imGUIviewer.h"
 
 // using namespace std;
@@ -205,6 +208,40 @@ void step_heat_diffusion(Eigen::VectorXd& U, const std::vector<std::vector<int>>
         U_next(v) = U(v) + 0.5 * laplacien; 
     }
     U = U_next;
+}
+
+
+typedef Eigen::Triplet<double> T;
+
+void build_laplacian_matrix(const Eigen::MatrixXd &V, const Eigen::MatrixXi &F, Eigen::SparseMatrix<double> &L)
+{
+    std::vector<std::vector<int>> adj_list;
+    igl::adjacency_list(F, adj_list);
+
+    std::vector<T> tripletList;
+    
+    // On réserve de la place (environ 7 coefficients par sommet en moyenne) -> formule d'euler
+    tripletList.reserve(V.rows() * 7);
+
+    for(int i = 0; i < V.rows(); ++i)
+    {
+        // valence de i (nb voisins)
+        double k = (double)adj_list[i].size();
+
+        if(k == 0) {
+            tripletList.push_back(T(i, i, 1.0));
+            continue;
+        }
+
+        tripletList.push_back(T(i, i, 1.0));
+        double coeff_k = -1.0 / k;
+        for (int voisin : adj_list[i])
+        {
+            tripletList.push_back(T(i, voisin, coeff_k));
+        }
+    }
+    L.resize(V.rows(), V.rows());
+    L.setFromTriplets(tripletList.begin(), tripletList.end());
 }
 
 
