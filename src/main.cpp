@@ -161,7 +161,7 @@ int main(int argc, char *argv[])
                 }
                 callback_visualize(viewer, C, V, F, heat_values);
                 std::cout << "Diffusion en cours..." << std::endl;
-                                
+
                 return true;
             }
             case '1':
@@ -271,7 +271,7 @@ int main(int argc, char *argv[])
 
             case '6': // DIFFUSION COTANGENT
             {
-                double lambda = 10000.0; 
+                double lambda = 10.0; 
 
                 Eigen::VectorXd U_new = heat_values;
                 
