@@ -271,21 +271,36 @@ int main(int argc, char *argv[])
 
             case '6': // DIFFUSION COTANGENT
             {
-                double lambda = 10.0; 
+                double lambda = 0.0001; 
 
                 Eigen::VectorXd U_new = heat_values;
                 
                 std::cout << "Diffusion Cotangent (Physique)..." << std::endl;
+
+                if (ui_state.boundary){
+                    neighbors = get_k_ring_neighbors(neighbors, adj_list, ui_state.selected_vertex, ui_state.k_rings);
+                } else {
+                    neighbors.clear(); 
+                }
                 
                 if (ui_state.selected_vertex != -1) heat_values(ui_state.selected_vertex) = 1.0;
 
                 // Résolution
                 solve_cotangent_heat(heat_values, L_cot, Mass_bary, lambda, U_new);
-                
                 heat_values = U_new;
-                
                 if (ui_state.selected_vertex != -1) heat_values(ui_state.selected_vertex) = 1.0;
-
+                std::vector<int> b_vec;
+                std::vector<double> bc_vec;
+                b_vec.push_back(ui_state.selected_vertex);
+                bc_vec.push_back(1.0);
+                if (!neighbors.empty()) {
+                    for(int i=0; i<V.rows(); ++i) {
+                        if(neighbors.find(i) == neighbors.end() && i != ui_state.selected_vertex) {
+                            b_vec.push_back(i);
+                            bc_vec.push_back(0.0); 
+                        }
+                    }
+                }
                 callback_visualize(viewer, C, V, F, heat_values);
                 return true;
             }
