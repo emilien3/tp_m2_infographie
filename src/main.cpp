@@ -329,6 +329,45 @@ int main(int argc, char *argv[])
                 igl::slice_into(U_in, in, heat_values);
                 igl::slice_into(bc, b, heat_values);
                 callback_visualize(viewer, C, V, F, heat_values);
+                return true;
+            }
+            case '8':
+            {
+                if (ui_state.selected_vertex == -1) {
+                    std::cout << "Erreur: Selectionnez un point source ('1' -> Clic) !" << std::endl;
+                    return true;
+                }
+
+                if (ui_state.boundary){
+                    neighbors = get_k_ring_neighbors(neighbors, adj_list, ui_state.selected_vertex, ui_state.k_rings);
+                } else {
+                    neighbors.clear(); 
+                }
+
+                Eigen::SparseMatrix<double> L_in_in, L_in_b;
+                
+                Eigen::VectorXi all, in, b, IA, IC;
+                
+                Eigen::VectorXd bc, U_in;
+                
+                solve_laplace_system(L_cot, V, F, L_in_in, L_in_b, all, in, b, IA, IC, bc, ui_state, neighbors, U_in);
+
+                igl::slice_into(U_in, in, heat_values);
+                igl::slice_into(bc, b, heat_values);
+                
+
+                // U = V;
+                Eigen::RowVector3d translation(0.5, 0.2, 0.0);
+                for(int i = 0; i < V.rows(); i++)
+                {
+                    double w = heat_values(i);
+                    U.row(i) = V.row(i) + w * translation;
+                }
+                
+                viewer.data().set_vertices(U);
+                viewer.data().compute_normals();
+                callback_visualize(viewer, C, V, F, heat_values);
+                return true;
             }
 
             default :
