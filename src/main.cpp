@@ -31,7 +31,9 @@ int main(int argc, char *argv[])
     Eigen::MatrixXd V, C, U;
     Eigen::MatrixXi F;
 
-    Eigen::SparseMatrix<double> P, L_cot, Mass;
+    Eigen::SparseMatrix<double> P, L_cot, Mass_bary;
+    Eigen::SparseMatrix<double> M_voronoi; // Matrice de masse
+
     std::vector<std::vector<int>> adj_list;
     std::set<int> neighbors;
     
@@ -53,7 +55,11 @@ int main(int argc, char *argv[])
     
     igl::cotmatrix(V, F, L_cot);
     // igl::cotmatrix(V,F,L_cot);
-    igl::massmatrix(V, F, igl::MASSMATRIX_TYPE_BARYCENTRIC, Mass);
+    igl::massmatrix(V, F, igl::MASSMATRIX_TYPE_BARYCENTRIC, Mass_bary);
+    igl::massmatrix(V, F, igl::MASSMATRIX_TYPE_VORONOI, M_voronoi);
+
+
+                
     
     Eigen::VectorXd s_laplacien(V.rows());
     Eigen::VectorXd neighborhood_colors = Eigen::VectorXd::Zero(V.rows());
@@ -155,14 +161,7 @@ int main(int argc, char *argv[])
                 }
                 callback_visualize(viewer, C, V, F, heat_values);
                 std::cout << "Diffusion en cours..." << std::endl;
-
-                // else {
-                //     for(int i=0; i< 10; i++){
-                        
-                //         step_heat_diffusion(heat_values, adj_list);       
-                //         callback_visualize(viewer, C, V, F, heat_values);
-                //     }   
-                // }                
+                                
                 return true;
             }
             case '1':
@@ -186,18 +185,16 @@ int main(int argc, char *argv[])
             
             case '3': //laplacien courbure moyenne
             {
-                compute_mean_curvature(s_laplacien, V, F) ;
-
-                // Eigen::SparseMatrix<double> M; // Matrice de masse
+                // compute_mean_curvature(s_laplacien, V, F) ;
                 
-                // igl::massmatrix(V, F, igl::MASSMATRIX_TYPE_VORONOI, M);
+                Eigen::SparseMatrix<double> Minv;
+                Minv = M_voronoi.cwiseInverse(); 
+                Eigen::SparseMatrix<double> L_normalized = Minv * L_cot;
                 
-                // Eigen::SparseMatrix<double> Minv;
-                // Minv = M.cwiseInverse(); 
-                // Eigen::SparseMatrix<double> L_normalized = Minv * L_cot;
+                // Calculer les valeurs du Laplacien pour chaque sommet
+                Eigen::MatrixXd v_norm = L_normalized * V;
                 
-                // // Calculer les valeurs du Laplacien pour chaque sommet
-                // Eigen::VectorXd s_laplacien = L_normalized * V.col(0); 
+                Eigen::VectorXd s_laplacien = v_norm.rowwise().norm();//norme ligne par ligne pour l'affichage
                 
                 callback_visualize(viewer, C, V, F, s_laplacien);
                 return true;
@@ -283,7 +280,7 @@ int main(int argc, char *argv[])
                 if (ui_state.selected_vertex != -1) heat_values(ui_state.selected_vertex) = 1.0;
 
                 // Résolution
-                solve_cotangent_heat(heat_values, L_cot, Mass, lambda, U_new);
+                solve_cotangent_heat(heat_values, L_cot, Mass_bary, lambda, U_new);
                 
                 heat_values = U_new;
                 
