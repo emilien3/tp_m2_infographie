@@ -247,6 +247,8 @@ void solve_implicit_heat(const Eigen::VectorXd &U_old,
 {
     int n = U_old.rows();
 
+    U_new = U_old;
+
     Eigen::SparseMatrix<double> I(n, n);
     I.setIdentity();
 

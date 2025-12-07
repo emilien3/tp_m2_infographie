@@ -125,6 +125,11 @@ int main(int argc, char *argv[])
 
             case ' ': //Diffusion
             {
+                if (ui_state.boundary && ui_state.selected_vertex == -1) {
+                    std::cout << "Action ignorée : Veuillez sélectionner un sommet (Mode 1 + Clic) pour la diffusion avec bord." << std::endl;
+                    return true;
+                }
+
                 if (ui_state.boundary){
                     int k_rings = ui_state.k_rings;
                     int selected_vertex = ui_state.selected_vertex;
@@ -155,7 +160,11 @@ int main(int argc, char *argv[])
             }
 
             case '2':  // k-rings
-            {              
+            {   
+                if (ui_state.selected_vertex == -1) {
+                    std::cout << "Action ignorée : Sélectionnez un sommet (Mode 1 + Clic) pour afficher les voisinages." << std::endl;
+                    return true;
+                }
                 Eigen::VectorXd neighborhood_colors = Eigen::VectorXd::Zero(V.rows());
                 int k_rings = ui_state.k_rings;
                 int selected_vertex = ui_state.selected_vertex;
@@ -230,7 +239,7 @@ int main(int argc, char *argv[])
                 
                 build_laplacian_matrix(V, F, P, neighbors, ui_state.selected_vertex);
                 
-                Eigen::VectorXd U_new;
+                Eigen::VectorXd U_new = heat_values;
                 std::cout << "Diffusion implicite (lambda=" << lambda << ")..." << std::endl;
                 
                 if (ui_state.selected_vertex != -1) heat_values(ui_state.selected_vertex) = 1.0;
@@ -248,6 +257,17 @@ int main(int argc, char *argv[])
                 Eigen::VectorXd U_new = heat_values;
                 
                 std::cout << "Diffusion Cotangent (Physique)..." << std::endl;
+
+                // SÉCURITÉ : Vérifier la sélection si boundary est actif
+                if (ui_state.boundary && ui_state.selected_vertex == -1){
+                    std::cout << "Attention : Bordure activée mais aucun sommet sélectionné. Diffusion globale effectuée." << std::endl;
+                    // On peut soit return, soit forcer neighbors.clear()
+                    neighbors.clear(); 
+                } else if (ui_state.boundary){
+                    neighbors = get_k_ring_neighbors(neighbors, adj_list, ui_state.selected_vertex, ui_state.k_rings);
+                } else {
+                    neighbors.clear(); 
+                }
 
                 if (ui_state.boundary){
                     neighbors = get_k_ring_neighbors(neighbors, adj_list, ui_state.selected_vertex, ui_state.k_rings);
