@@ -80,3 +80,6 @@ void solve_laplace_system(const Eigen::SparseMatrix<double> &L_cot,
                         const std::set<int>& neighbors,
                         
                         Eigen::VectorXd &U_in);
+
+
+void fonction_transfert(double &w, int &typeChoosed);

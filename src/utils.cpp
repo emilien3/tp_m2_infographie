@@ -1,3 +1,5 @@
+#include <cmath>
+
 #include <igl/adjacency_list.h>
 #include <igl/unproject_onto_mesh.h>
 #include <igl/cotmatrix.h>
@@ -355,3 +357,27 @@ void solve_laplace_system(const Eigen::SparseMatrix<double> &L_cot,
     Eigen::VectorXd rhs = L_in_b * bc;
     U_in = solver.solve(rhs);
 }
+
+
+enum Type_Fonction
+{
+    Rien = 0,
+    Quadratique = 1,
+    Smoothstep = 2,
+    Sinus = 3,
+    Inverse = 4,
+};
+
+void fonction_transfert(double &w, int &typeChoosed)
+{
+    // fonctions de transfert trouvées sur internet
+    switch (typeChoosed)
+    {
+        case Rien: {w = w;break;}
+        case Quadratique: {w = w*w;break;}
+        case Smoothstep: {w = w * w * (3.0 - 2.0 * w);break;}
+        case Sinus: {w = std::sin(w * (igl::PI/2));break;}
+        case Inverse: {w = 1.0 - (1.0 - w) * (1.0 - w);break;} // Inverse Quadratique
+    }
+}
+

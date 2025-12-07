@@ -67,14 +67,11 @@ int main(int argc, char *argv[])
     /////////////////
     ///// ImGUI /////
     ////////////////
-    
     igl::opengl::glfw::Viewer viewer;
-
     // Rendering of text labels is handled by ImGui, so we need to enable the ImGui
     // plugin to show text labels.
     igl::opengl::glfw::imgui::ImGuiPlugin plugin;
     viewer.plugins.push_back(&plugin);
-
     igl::opengl::glfw::imgui::ImGuiMenu menu;
     plugin.widgets.push_back(&menu);
     
@@ -172,7 +169,6 @@ int main(int argc, char *argv[])
             case '3': //laplacien courbure moyenne
             {
                 // compute_mean_curvature(s_laplacien, V, F) ;
-                
                 Eigen::SparseMatrix<double> Minv;
                 Minv = M_voronoi.cwiseInverse(); 
                 Eigen::SparseMatrix<double> L_normalized = Minv * L_cot;
@@ -339,6 +335,7 @@ int main(int argc, char *argv[])
                 for(int i = 0; i < V.rows(); i++)
                 {
                     double w = heat_values(i);
+                    fonction_transfert(w, ui_state.transfer_function_type);
                     U.row(i) = V.row(i) + w * translation;
                 }
                 

@@ -19,9 +19,13 @@ public:
     void render(igl::opengl::glfw::imgui::ImGuiMenu& menu);
     int selected_vertex = 0;
     int k_rings = 0;
+
+    int transfer_function_type = 0;
     
     bool boundary = false;
     bool selection_mode = false;
+
+
 
 private:
     enum Orientation { Up = 0, Down, Left, Right };
@@ -39,6 +43,8 @@ private:
     void render_direction_combo();
     void render_letter_selector();
     void render_hello_button();
+
+    void radio_fonction_transfert();
 
     void update_letter_choices();
 };

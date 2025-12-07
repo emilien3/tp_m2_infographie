@@ -16,6 +16,8 @@ void ViewerControls::render(igl::opengl::glfw::imgui::ImGuiMenu& menu) {
         render_direction_combo();
         render_letter_selector();
         render_hello_button();
+
+        radio_fonction_transfert();
     }
 }
 
@@ -64,4 +66,14 @@ void ViewerControls::render_hello_button() {
     // if (ImGui::Button("Print Hello", ImVec2(-1, 0))) {
     //     std::cout << "Hello\n";
     // }
+}
+
+void ViewerControls::radio_fonction_transfert(){
+    ImGui::Separator();
+    ImGui::Text("Fonction de Transfert :");
+
+    ImGui::RadioButton("Lineaire (Cône)",    &transfer_function_type, 0);
+    ImGui::RadioButton("Quadratique (Doux)", &transfer_function_type, 1);
+    ImGui::RadioButton("Smoothstep (Rond)",  &transfer_function_type, 2);
+    ImGui::RadioButton("Sinus (Gonflé)",     &transfer_function_type, 3);
 }
