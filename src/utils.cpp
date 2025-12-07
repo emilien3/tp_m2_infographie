@@ -344,7 +344,6 @@ void solve_laplace_system(const Eigen::SparseMatrix<double> &L_cot,
     igl::slice(L_cot,in,in,L_in_in);
     igl::slice(L_cot,in,b,L_in_b);
 
-
     Eigen::SimplicialLLT<Eigen::SparseMatrix<double>> solver;
     solver.compute(-L_in_in);
 

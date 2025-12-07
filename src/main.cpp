@@ -3,14 +3,13 @@
 #include <igl/cotmatrix.h>
 #include <igl/doublearea.h>
 
-// Pas utilisé dans le code 
+// Pas utilisé dans le code pour le moment
 #include <igl/per_vertex_normals.h>
 #include <igl/grad.h>
 #include <igl/jet.h>
 #include <igl/readDMAT.h>
 #include <igl/repdiag.h>
 #include <igl/slice_into.h>
-
 
 #include <igl/massmatrix.h>
 #include <igl/readOFF.h>
@@ -24,15 +23,13 @@
 #include "../include/imGUIviewer.h"
 #include "../include/utils.hpp"
 
-
 int main(int argc, char *argv[])
 {
     // V for vertices and F for faces
     Eigen::MatrixXd V, C, U;
     Eigen::MatrixXi F;
 
-    Eigen::SparseMatrix<double> P, L_cot, Mass_bary;
-    Eigen::SparseMatrix<double> M_voronoi; // Matrice de masse
+    Eigen::SparseMatrix<double> P, L_cot, Mass_bary, M_voronoi;
 
     std::vector<std::vector<int>> adj_list;
     std::set<int> neighbors;
@@ -54,12 +51,8 @@ int main(int argc, char *argv[])
     Eigen::VectorXd heat_values = Eigen::VectorXd::Zero(V.rows());    
     
     igl::cotmatrix(V, F, L_cot);
-    // igl::cotmatrix(V,F,L_cot);
     igl::massmatrix(V, F, igl::MASSMATRIX_TYPE_BARYCENTRIC, Mass_bary);
     igl::massmatrix(V, F, igl::MASSMATRIX_TYPE_VORONOI, M_voronoi);
-
-
-                
     
     Eigen::VectorXd s_laplacien(V.rows());
     Eigen::VectorXd neighborhood_colors = Eigen::VectorXd::Zero(V.rows());
@@ -70,14 +63,13 @@ int main(int argc, char *argv[])
     C = Eigen::MatrixXd::Constant(F.rows(),3,1);
     Eigen::Vector3d m = V.colwise().minCoeff();
     Eigen::Vector3d M = V.colwise().maxCoeff();
-
-    // Affichage //
-    igl::opengl::glfw::Viewer viewer;
     
     /////////////////
     ///// ImGUI /////
     ////////////////
     
+    igl::opengl::glfw::Viewer viewer;
+
     // Rendering of text labels is handled by ImGui, so we need to enable the ImGui
     // plugin to show text labels.
     igl::opengl::glfw::imgui::ImGuiPlugin plugin;
@@ -95,15 +87,12 @@ int main(int argc, char *argv[])
     /// CALLBACKS ////
     //////////////////
     
-    // Define the callback for face capture
     viewer.callback_mouse_down = 
     [&](igl::opengl::glfw::Viewer& viewer, int button, int modifier) -> bool
     {    
         if (ui_state.selection_mode)
         {
-            
             return callback_select_mode(viewer, V, F, ui_state);
-
         }
         // else
         // {
@@ -115,61 +104,58 @@ int main(int argc, char *argv[])
     [&](igl::opengl::glfw::Viewer& viewer, unsigned char key, int modifier) -> bool
     {
 
-        std::cout << "Le mode est à" << ui_state.selection_mode;
+        std::cout << "Le mode de sélection est à" << ui_state.selection_mode;
 
         switch (key)
         {
-            case '0': // on reset
+            case '0': //Reset
             {
-                if (ui_state.selected_vertex == -1) {
-                    std::cout << "Erreur: Selectionnez un sommet d'abord (clic droit) !" << std::endl;
-                    return true;
-                }
-                
                 heat_values.setZero(); 
                 
-                heat_values(ui_state.selected_vertex) = 1.0; 
+                ui_state.selected_vertex = -1;
+                //heat_values(ui_state.selected_vertex) = 1.0; 
                 
-                std::cout << "Source de chaleur placee sur le sommet " << ui_state.selected_vertex << std::endl;
                 U = V;
-
                 // Send new positions, update normals, recenter
                 viewer.data().set_vertices(U);
                 viewer.data().compute_normals();
                 viewer.core().align_camera_center(U,F);
 
-                // On affiche
+                // Actualisation affichage
                 callback_visualize(viewer, C, V, F, heat_values);
                 return true;
             }
 
-            case ' ': // Diffusion
+            case ' ': //Diffusion
             {
-
                 if (ui_state.boundary){
                     int k_rings = ui_state.k_rings;
                     int selected_vertex = ui_state.selected_vertex;
                     neighbors = get_k_ring_neighbors(neighbors, adj_list, selected_vertex, k_rings);
-                }else {
+                } else {
                     neighbors.clear(); // Si boundary désactivé, on diffuse partout
                 }
+                
 
-                for(int i=0; i< 10; i++){ // pour aller plus vit
-                    step_heat_diffusion(heat_values, adj_list, neighbors);
+                step_heat_diffusion(heat_values, adj_list, neighbors);
 
-                    if (ui_state.selected_vertex != -1) heat_values(ui_state.selected_vertex) = 1.0;
-                }
+                if (ui_state.selected_vertex != -1) heat_values(ui_state.selected_vertex) = 1.0; 
+
                 callback_visualize(viewer, C, V, F, heat_values);
+                
                 std::cout << "Diffusion en cours..." << std::endl;
 
                 return true;
             }
+
             case '1':
+            {
                 ui_state.selection_mode = true; 
                 viewer.data().set_colors(C);
                 viewer.data().clear_points(); 
                 std::cout << "Mode Selection ACTIVE. Cliquez sur le maillage." << std::endl;
                 return true;
+            }
 
             case '2':  // k-rings
             {              
@@ -237,7 +223,6 @@ int main(int argc, char *argv[])
 
             case '5': // laplacien par sytèmes d'équation 
             {    
-
                 if (ui_state.boundary){
                     int k_rings = ui_state.k_rings;
                     int selected_vertex = ui_state.selected_vertex;
@@ -246,15 +231,6 @@ int main(int argc, char *argv[])
                     neighbors.clear(); // Si boundary désactivé, on diffuse partout
                 }
                 double lambda = 10; 
-
-                if (ui_state.boundary){
-                    int k_rings = ui_state.k_rings;
-                    int selected_vertex = ui_state.selected_vertex;
-                    neighbors = get_k_ring_neighbors(neighbors, adj_list, selected_vertex, k_rings);
-                }else {
-                    neighbors.clear(); // Si boundary désactivé, on diffuse partout
-                }
-                
                 
                 build_laplacian_matrix(V, F, P, neighbors, ui_state.selected_vertex);
                 
@@ -288,7 +264,9 @@ int main(int argc, char *argv[])
                 // Résolution
                 solve_cotangent_heat(heat_values, L_cot, Mass_bary, lambda, U_new);
                 heat_values = U_new;
+
                 if (ui_state.selected_vertex != -1) heat_values(ui_state.selected_vertex) = 1.0;
+                
                 std::vector<int> b_vec;
                 std::vector<double> bc_vec;
                 b_vec.push_back(ui_state.selected_vertex);
@@ -308,7 +286,7 @@ int main(int argc, char *argv[])
             case '7':
             {
                 if (ui_state.selected_vertex == -1) {
-                    std::cout << "Erreur: Selectionnez un point source ('1' -> Clic) !" << std::endl;
+                    std::cout << "Erreur: Selectionnez un point source" << std::endl;
                     return true;
                 }
 
@@ -334,7 +312,7 @@ int main(int argc, char *argv[])
             case '8':
             {
                 if (ui_state.selected_vertex == -1) {
-                    std::cout << "Erreur: Selectionnez un point source ('1' -> Clic) !" << std::endl;
+                    std::cout << "Erreur: Selectionnez un point source" << std::endl;
                     return true;
                 }
 
